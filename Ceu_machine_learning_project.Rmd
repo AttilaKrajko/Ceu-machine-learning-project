@@ -106,8 +106,8 @@ Combine the test and training data and clean fields, setting the date variable.
 Date was converted from “character” to “date”.
 
 ```{r}
-train <- train[sample(1:nrow(train), 10000, replace=FALSE),]
-test <- test[sample(1:nrow(test), 2500, replace=FALSE),]
+train <- train[sample(1:nrow(train), 15000, replace=FALSE),]
+test <- test[sample(1:nrow(test), 5000, replace=FALSE),]
 
 train <- train[train$Sales > 0,]  
 train$Id <- 0
@@ -521,3 +521,4 @@ head(submission, n = 10)
 cat("saving the submission file\n")
 write.csv(submission, "h2o_rf.csv",row.names=F)
 ```
+
