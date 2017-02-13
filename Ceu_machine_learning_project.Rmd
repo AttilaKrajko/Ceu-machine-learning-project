@@ -488,3 +488,35 @@ write.csv(submission, "h2o_rf.csv",row.names=F)
 ```
 
 
+###GBM
+
+```{r}
+system.time({
+  md <- h2o.gbm(x = cols, y = "LogSales", 
+        training_frame = trainHex, validation_frame = testHex,
+        max_depth = 15, ntrees = 500, learn_rate = 0.01, nbins = 200,
+        stopping_rounds = 3, stopping_tolerance = 1e-3)
+})
+```
+
+
+## Get the results
+```{r}
+md
+
+predictions<-as.data.frame(h2o.predict(rfHex,testHex))
+```
+
+## Return the predictions to the original form
+
+```{r}
+
+pred <- expm1(predictions[,1])
+summary(pred)
+submission <- data.frame(Id=test$Id, Sales=pred)
+head(submission, n = 10)
+
+cat("saving the submission file\n")
+write.csv(submission, "h2o_gbm.csv",row.names=F)
+```
+
