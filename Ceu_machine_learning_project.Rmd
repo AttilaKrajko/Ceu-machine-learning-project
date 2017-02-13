@@ -3,26 +3,572 @@ title: "Ceu_machine_learning_project"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+
+## Introduction
+
+In this project I had to forecast store sales over 100 Rossamnn stores, based on almost three years of sales history. the company collected sales data for 1,115 Rossmann stores, including holiday, promotion, competitors etc. I select machine learning algorithms to make precise forecast and find those factors which may affect the store sales.
+
+
+## Data source
+
+install.packages("forecast")
+install.packages("data.table")
+install.packages("zoo")
+install.packages("arm")
+install.packages("readr")
+install.packages("dplyr")
+install.packages("ggplot2")
+install.packages("pastecs")
+install.packages("DataCombine")
+install.packages("descr")
+install.packages("fBasics")
+install.packages("stargazer")
+install.packages("sandwich")
+install.packages("lmtest")
+install.packages("splines")
+install.packages("readr")
+install.packages("gmodels")
+install.packages("mfx")
+install.packages("descr")
+install.packages("rstan")
+
+
+```{r}
+
+#Libraries
+
+library(forecast)
+library(data.table)
+library(zoo)
+library(arm)
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(pastecs)
+library(DataCombine)
+library(descr)
+library(fBasics)
+library(stargazer)
+library(sandwich)
+library(lmtest)
+library(splines)
+library(readr)
+library(gmodels)
+library(mfx)
+library(descr)
+library(rstan)
+
+
+# CLEAR MEMORY
+rm(list = ls())
+
+# SET WORKING DIRECTORY
+setwd("/Users/Attila/Desktop/R tool/Ceu machine learning project")
+getwd()
 ```
 
-## R Markdown
+#First, load train, test, and store data.
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+```{r}
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+test <- read.csv("test.csv")
+train <- read.csv("train.csv")
+store <- read.csv("store.csv")
 
-```{r cars}
-summary(cars)
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+
+##Summary
+
+```{r}
+str(train)
+str(test)
+str(store)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+The test set has 41088 rows, the train set has 1017209 rows.Store 622 has 11 missing values in the Open columns. This dataset is very big to handle it that is why I reduced it.
+
+I also recognized that the whole customers and sales column is missing from the test data.
+
+```{r}
+
+summary(train)
+summary(test)
+
+```
+
+##Featuring
+
+Combine the test and training data and clean fields, setting the date variable.
+Date was converted from “character” to “date”.
+
+```{r}
+train <- train[sample(1:nrow(train), 10000, replace=FALSE),]
+test <- test[sample(1:nrow(test), 2500, replace=FALSE),]
+
+train <- train[train$Sales > 0,]  
+train$Id <- 0
+test$Sales <- 0
+test$Customers <- 0
+
+total <- rbind(train, test)
+total <- merge(total,store,by="Store")
+
+ train$Date = as.Date(train$Date, format = "%Y-%m-%d")
+ train <- train[order(train$Date),]
+ 
+ test$Date = as.Date(test$Date, format = "%Y-%m-%d")
+ test <- test[order(test$Date),]
+
+```
+
+```{r}
+train$Promo <- as.factor(train$Promo)
+train$Open <- as.factor(train$Open)
+train$DayOfWeek <- as.factor(train$DayOfWeek)
+train$SchoolHoliday <- as.factor(train$SchoolHoliday)
+
+
+
+train$Month <- as.factor(format(as.Date(train$Date),"%m"))
+train$Day <- as.factor(format(as.Date(train$Date),"%d"))
+train$Year <- as.factor(format(as.Date(train$Date),"%Y"))
+```
+
+###First look at the data
+
+
+
+##Examine the period
+
+The dataset is continous. The test period ranges from 2015-08-01 to 2015-09-17, the train period ranges from 2013-01-01 to 2015-07-31.
+
+```{r}
+plot(train$Date, type = "l")
+
+```
+
+
+```{r}
+plot(test$Date, type = "l")
+```
+
+
+
+##Histogram of sales
+
+```{r}
+hist(train$Sales, 100)
+summary(train$Sales)
+```
+
+
+## Open store percent in  Train
+```{r}
+
+table(train$Open) / nrow(train) 
+
+```
+
+## Open store percent in Test
+```{r}
+
+table(train$Open) / nrow(test) 
+
+```
+
+
+## Percent of the time promo in train
+```{r}
+
+table(train$Promo) / nrow(train)
+```
+
+## Percent of the time promo in test
+```{r}
+
+table(test$Promo) / nrow(train)
+
+```
+
+
+## Percent of the time holiday in train
+```{r}
+table(train$StateHoliday) / nrow(train) 
+
+```
+
+## Percent of the time school holiday in train
+
+```{r}
+table(train$SchoolHoliday) / nrow(train) 
+
+```
+
+## Percent of the time school holiday in test
+
+```{r}
+table(test$SchoolHoliday) / nrow(test) 
+
+```
+
+##Histogram of store competition distance
+
+```{r}
+hist(store$CompetitionDistance, 100)
+
+```
+
+## Merge the dataset with same number of variables
+
+```{r}
+
+
+
+
+train <- merge(train,store)
+test <- merge(test,store)
+```
+
+##Exploratory data analysis
+
+Exploratory Data Analysis (EDA), describe patterns, trends, and relationships for Rossman store date, holiday, and sales data. Provides better insight the data.
+
+The number of stores, train, test, open, and holiday data is across all data, where promotion, sales, and customer data is only among stores that were open. If a store is closed hasn't got promotion, or sales.
+
+
+## Line diagram shows the average sales by store assortment
+
+The different store types and assortment types imply different trends:
+
+
+
+```{r}
+
+
+ggplot(train, 
+       aes(x = Date, y = Sales, color = factor(Assortment))) + 
+    geom_smooth(size = 2)
+```
+
+
+# The diagram shows the distribution of number of the customers and sales
+
+The graph shows positive correlation between the number of customers and sales. We can also find some outliers.
+  
+```{r}
+
+  ggplot(data=train,aes(x=Customers,y=Sales)) + geom_point(color="blue") + ggtitle("Sales Vs No. of Customers")
+
+```
+
+# The line diagram shows the distribution of number of the customers by date
+
+```{r}
+
+ggplot(train, 
+       aes(x = Date, y = Customers, color = factor(Assortment))) + 
+    geom_smooth(size = 2)
+```
+
+
+# The plot diagram shows the average sales by store (based on id)
+We can conlude that most of the average sales around 5000 and there are som outliers over 15000.
+
+```{r}
+sales.by.store.df <- aggregate(train$Sales,by = list(train$Store),mean)
+names(sales.by.store.df) <- c("Store","Average.Sales")
+ggplot(data=sales.by.store.df,aes(x=Store,y=Average.Sales)) + geom_point(color="blue") + 
+  ggtitle("Average sales by store id")
+
+```
+
+# The barchart diagram shows the average sales of the weekday
+
+The most popular day of the week is the first one in aspect of the average sales.
+
+```{r}
+sales.by.day.df <- aggregate(train$Sales,by = list(train$DayOfWeek),mean)
+names(sales.by.day.df) <- c("DayOfWeek","Average.Sales")
+ggplot(data=sales.by.day.df,aes(x=DayOfWeek,y=Average.Sales,fill=DayOfWeek)) +
+  geom_bar(stat="identity") + ggtitle("Average sales by day of the week")
+  
+```
+  
+
+# The two barcharts show the average sales with promo or without promo
+
+Based on the diargram result we can see that promo action has significant effect on average sales.
+
+```{r}
+sales.by.promo.df <- aggregate(train$Sales,by = list(train$Promo),function(x){mean(as.numeric(x))})
+names(sales.by.promo.df) <- c("Promo","Average.Sales")
+ggplot(data=sales.by.promo.df,aes(x=Promo,y=Average.Sales,fill=(as.integer(sales.by.promo.df$Promo)+1))) + 
+  geom_bar(stat="identity") + ggtitle("Average Sales by promo")
+  
+```
+
+
+# The distribution shows the average sales of each store
+
+```{r}
+sales.by.storeP.df <- aggregate(train$Sales,by = list(train$Store,train$Promo),mean)
+names(sales.by.storeP.df) <- c("Store","isPromo","Average.Sales")
+ggplot(data=sales.by.storeP.df,aes(Store,Average.Sales,color=isPromo)) + geom_point() +
+  ggtitle("Average Sales of each store by promo")
+```
+
+
+# The barcharts show the average sales on school holiday
+
+Most of the purchase were accomplished on schoolholiday.
+
+```{r}
+sales.by.schoolH.df <- aggregate(train$Sales,by = list(train$SchoolHoliday),function(x){mean(as.numeric(x))})
+names(sales.by.schoolH.df) <- c("SchoolHoliday","Average.Sales")
+ggplot(data=sales.by.schoolH.df,aes(x=SchoolHoliday,y=Average.Sales,fill=SchoolHoliday)) + geom_bar(stat="identity") +
+  ggtitle("Average sales by school holiday")
+  
+```
+
+# The barcharts show the average sales by store type
+
+```{r}
+sales.by.storeType.df <- aggregate(train$Sales,by = list(train$StoreType),function(x){mean(as.numeric(x))})
+names(sales.by.storeType.df) <- c("Store.Type","Average.Sales")
+ggplot(data=sales.by.storeType.df,aes(x=Store.Type,y=Average.Sales,fill=Store.Type)) + geom_bar(stat="identity") +
+  ggtitle("Average Sales by store type")
+  
+```
+
+# The barcharts show the average sales by assortment type
+
+```{r}
+sales.by.assortment.df <- aggregate(train$Sales,by = list(train$Assortment),function(x){mean(as.numeric(x))})
+names(sales.by.assortment.df) <- c("Assortment","Average.Sales")
+ggplot(data=sales.by.assortment.df,aes(x=Assortment,y=Average.Sales,fill=Assortment)) + geom_bar(stat="identity") +
+  ggtitle("Average Sales by assortment type")
+  
+```
+
+# The distributon shows the average sales by competiton distance
+
+```{r}
+sales.by.distance.df <- aggregate(train$Sales,by = list(train$CompetitionDistance),mean)
+names(sales.by.distance.df) <- c("CompDistance","Average.Sales")
+ggplot(data=sales.by.distance.df,aes(x=CompDistance,y=Average.Sales)) + geom_point(color="blue") + 
+  ggtitle("Average sales by Competition Distance")
+  
+```
+
+# The barcharts show the average sales by month of the year
+
+The most popular month is december in view of the average sales.
+
+```{r}
+sales.by.month.df <- aggregate(train$Sales,by = list(train$Month),mean)
+names(sales.by.month.df) <- c("Month","Average.Sales")
+ggplot(data=sales.by.month.df,aes(x=Month,y=Average.Sales,fill=Month)) + geom_bar(stat="identity") + 
+  ggtitle("Average Sales by Month")
+  
+```
+
+# The barcharts show the average sales by day of the month
+
+```{r}
+sales.by.date.df <- aggregate(train$Sales,by = list(train$Day),mean)
+names(sales.by.date.df) <- c("Date","Average.Sales")
+ggplot(data=sales.by.date.df,aes(x=Date,y=Average.Sales,fill=Date)) + geom_bar(stat="identity") + 
+  ggtitle("Average sales by Date")
+```
+
+# The barcharts show the average sales by year
+
+The distributon of the sales are almost same at the first sight between the years, however we can see a little increase year by year but it is not significant.
+
+```{r}
+sales.by.year.df <- aggregate(train$Sales,by = list(train$Year),mean)
+names(sales.by.year.df) <- c("Year","Average.Sales")
+ggplot(data=sales.by.year.df,aes(x=Year,y=Average.Sales,fill=Year)) + geom_bar(stat="identity") + 
+  ggtitle("Average sales by Year")
+  
+```
+
+# The barcharts show the average sales per date by month
+
+```{r}
+sales.by.monthDay.df <- aggregate(train$Sales,by=list(train$Month,train$Day),mean)
+names(sales.by.monthDay.df) <- c("Month","Date","Average.Sales")
+ggplot(data=sales.by.monthDay.df,aes(Month,Average.Sales,fill=Date)) + geom_bar(stat="identity") + facet_wrap(~Date) +
+  ggtitle("Sales per date by month")
+```
+
+# The barcharts show the average sales with promo on day of the week
+  
+```{r}
+sales.by.dayP.df <- aggregate(train$Sales,by = list(train$DayOfWeek,train$Promo),mean)
+names(sales.by.dayP.df) <- c("DayOfWeek","isPromo","Average.Sales")
+ggplot(data=sales.by.dayP.df,aes(x=DayOfWeek,y=Average.Sales,fill=isPromo)) +
+  geom_bar(stat="identity",position = "dodge") + ggtitle("Average sales by Promo within day of the week")
+```
+
+### Modeling
+
+
+
+
+
+## Random forest
+
+Use data.table and H2O to create random forest predictions for the entire
+
+#Setup 
+
+install.packages("h2o")
+
+```{r}
+
+library(h2o)
+h2o.init(nthreads=-1, max_mem_size='6G')
+localH2O = h2o.init()
+```
+
+
+
+# Further transformation
+Observations with 0 Sales are removed to get more meaningful modelin result (discarded by Kaggle ).
+Seperating out the elements of the date column for the train set.
+
+I choose the log transformation to not be as sensitive to high sales.
+
+```{r}
+
+cat("Formatting the datasets...\n")
+train <- train[train$Sales > 0,]  
+train$Id <- 0
+test$Sales <- 0
+test$Customers <- 0
+
+
+
+total$Date <- as.Date(as.character(total$Date), "%Y-%m-%d")
+total$Year <- as.numeric(format(total$Date, "%Y"))
+total$Month <- as.numeric(format(total$Date, "%m"))
+total$Day <- as.numeric(format(total$Date, "%d"))
+total$Open[is.na(total$Open)] <- 1
+total[is.na(total)] <- -1
+total$LogSales <- log1p(total$Sales)
+
+train <- subset(total, Date < "2015-08-01")
+test <- subset(total, Date >= "2015-08-01")
+
+cat("Building the model...\n")
+cols <- names(train)[c(1,2,7:9,11:22)]
+cols
+```
+
+
+
+## Load data in R
+
+```{r}
+
+trainHex<-as.h2o(train)
+```
+
+## Train a random forest
+```{r}
+rfHex <- h2o.randomForest(x=cols,
+                          y="LogSales", 
+                          ntrees = 200, # 100
+                          max_depth = 20, # 30
+                          nbins_cats = 1115, ## allow it to fit store ID
+                          training_frame=trainHex)
+rfHex
+
+
+cat("Predicting Sales\n")
+
+```
+
+
+## Load test data
+
+```{r}
+testHex<-as.h2o(test)
+
+```
+
+
+## Get the results
+```{r}
+
+predictions<-as.data.frame(h2o.predict(rfHex,testHex))
+```
+
+## Return the predictions to the original form
+
+```{r}
+
+pred <- expm1(predictions[,1])
+summary(pred)
+submission <- data.frame(Id=test$Id, Sales=pred)
+
+cat("saving the submission file\n")
+write.csv(submission, "h2o_rf.csv",row.names=F)
+```
+
+
+##GBM
+
+```{r}
+
+system.time({
+  md <- h2o.gbm(x = 2:ncol(train), y = 1, 
+        training_frame = trainHex, validation_frame = testHex,
+        max_depth = 15, ntrees = 500, learn_rate = 0.01, nbins = 200,
+        stopping_rounds = 3, stopping_tolerance = 1e-3)
+})
+md
+
+h2o.auc(md)
+h2o.auc(h2o.performance(md, dx_test))
+```
+
+##GBM with Cross validation
+
+```{r}
+system.time({
+  md <- h2o.gbm(x = 2:ncol(trainHex), y = 1, 
+          training_frame = trainHex, 
+          max_depth = 15, ntrees = 500, learn_rate = 0.01, nbins = 200,
+          nfolds = 5,
+          stopping_rounds = 3, stopping_tolerance = 1e-3)
+})
+
+md
+
+h2o.auc(md)
+h2o.auc(h2o.performance(md, testHex))
+```
+
+## NN
+
+```{r}
+system.time({
+  md <- h2o.deeplearning(x = 2:ncol(trainHex), y = 1, 
+          training_frame = trainHex, validation_frame = testHex,
+          activation = "Rectifier", hidden = c(200,200), epochs = 100,
+          stopping_rounds = 3, stopping_tolerance = 0)
+})
+md
+
+h2o.auc(md)
+h2o.auc(h2o.performance(md, testHex))
+
+
+```
+
