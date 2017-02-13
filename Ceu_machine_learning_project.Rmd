@@ -11,27 +11,6 @@ In this project I had to forecast store sales over 100 Rossamnn stores, based on
 
 ## Data source
 
-install.packages("forecast")
-install.packages("data.table")
-install.packages("zoo")
-install.packages("arm")
-install.packages("readr")
-install.packages("dplyr")
-install.packages("ggplot2")
-install.packages("pastecs")
-install.packages("DataCombine")
-install.packages("descr")
-install.packages("fBasics")
-install.packages("stargazer")
-install.packages("sandwich")
-install.packages("lmtest")
-install.packages("splines")
-install.packages("readr")
-install.packages("gmodels")
-install.packages("mfx")
-install.packages("descr")
-install.packages("rstan")
-
 
 ```{r}
 
@@ -165,20 +144,6 @@ hist(train$Sales, 100)
 summary(train$Sales)
 ```
 
-
-## Open store percent in  Train
-```{r}
-
-table(train$Open) / nrow(train) 
-
-```
-
-## Open store percent in Test
-```{r}
-
-table(train$Open) / nrow(test) 
-
-```
 
 
 ## Percent of the time promo in train
@@ -521,4 +486,5 @@ head(submission, n = 10)
 cat("saving the submission file\n")
 write.csv(submission, "h2o_rf.csv",row.names=F)
 ```
+
 
