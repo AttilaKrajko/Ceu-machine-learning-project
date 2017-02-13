@@ -516,6 +516,7 @@ predictions<-as.data.frame(h2o.predict(rfHex,testHex))
 pred <- expm1(predictions[,1])
 summary(pred)
 submission <- data.frame(Id=test$Id, Sales=pred)
+head(submission, n = 10)
 
 cat("saving the submission file\n")
 write.csv(submission, "h2o_rf.csv",row.names=F)
