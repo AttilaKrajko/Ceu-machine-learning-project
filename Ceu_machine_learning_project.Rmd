@@ -521,5 +521,3 @@ head(submission, n = 10)
 cat("saving the submission file\n")
 write.csv(submission, "h2o_rf.csv",row.names=F)
 ```
-
-
