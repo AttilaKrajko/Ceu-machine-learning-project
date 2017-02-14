@@ -52,6 +52,7 @@ getwd()
 
 
 #First, load train, test, and store data.
+I have separately train and test database.
 
 ```{r}
 
@@ -88,6 +89,7 @@ summary(test)
 
 Combine the test and training data and clean fields, setting the date variable.
 Date was converted from “character” to “date”.
+I decrease the number of the observations.
 
 ```{r}
 train <- train[sample(1:nrow(train), 15000, replace=FALSE),]
@@ -246,7 +248,7 @@ ggplot(train,
 
 
 ##The plot diagram shows the average sales by store (based on id)
-We can conlude that most of the average sales around 5000 and there are som outliers over 15000.
+We can conlude that most of the average sales around 5000 and there are some outliers over 15000.
 
 ```{r}
 sales.by.store.df <- aggregate(train$Sales,by = list(train$Store),mean)
@@ -258,7 +260,7 @@ ggplot(data=sales.by.store.df,aes(x=Store,y=Average.Sales)) + geom_point(color="
 
 ##The barchart diagram shows the average sales of the weekday
 
-The most popular day of the week is the first one in aspect of the average sales.
+The most popular days of the week is the first and the last one in aspect of the average sales.
 
 ```{r}
 sales.by.day.df <- aggregate(train$Sales,by = list(train$DayOfWeek),mean)
@@ -650,6 +652,7 @@ clf <- xgb.train(   params              = param,
                     maximize            = FALSE,
                     feval=RMPSE
 )
+clf
 pred1 <- exp(predict(clf, data.matrix(test[,feature.names]))) -1
 submission <- data.frame(Id=test$Id, Sales=pred1)
 head(submission, n=10)
@@ -657,4 +660,6 @@ cat("saving the submission file\n")
 write_csv(submission, "rf1.csv")
 
 ```
+# Summary
 
+All in all, the best results was provided by xgboost. I only changed rounds (3000) and I transformed to log form the dependent variable (sales) which did not include zero sales for training the model.
