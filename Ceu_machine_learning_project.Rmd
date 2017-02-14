@@ -9,7 +9,7 @@ output: html_document
 In this project I had to forecast store sales over 100 Rossamnn stores, based on almost three years of sales history. the company collected sales data for 1,115 Rossmann stores, including holiday, promotion, competitors etc. I select machine learning algorithms to make precise forecast and find those factors which may affect the store sales.
 
 
-## Data source
+# Data source
 
 
 ```{r}
@@ -59,7 +59,7 @@ store <- read.csv("store.csv")
 
 
 
-##Summary
+#Summary
 
 ```{r}
 str(train)
@@ -79,7 +79,7 @@ summary(test)
 
 ```
 
-##Featuring
+#Featuring
 
 Combine the test and training data and clean fields, setting the date variable.
 Date was converted from “character” to “date”.
@@ -117,11 +117,11 @@ train$Day <- as.factor(format(as.Date(train$Date),"%d"))
 train$Year <- as.factor(format(as.Date(train$Date),"%Y"))
 ```
 
-###First look at the data
+##First look at the data
 
 
 
-##Examine the period
+#Examine the period
 
 The dataset is continous. The test period ranges from 2015-08-01 to 2015-09-17, the train period ranges from 2013-01-01 to 2015-07-31.
 
@@ -137,7 +137,7 @@ plot(test$Date, type = "l")
 
 
 
-##Histogram of sales
+#Histogram of sales
 
 ```{r}
 hist(train$Sales, 100)
@@ -146,13 +146,13 @@ summary(train$Sales)
 
 
 
-## Percent of the time promo in train
+# Percent of the time promo in train
 ```{r}
 
 table(train$Promo) / nrow(train)
 ```
 
-## Percent of the time promo in test
+# Percent of the time promo in test
 ```{r}
 
 table(test$Promo) / nrow(train)
@@ -160,34 +160,34 @@ table(test$Promo) / nrow(train)
 ```
 
 
-## Percent of the time holiday in train
+# Percent of the time holiday in train
 ```{r}
 table(train$StateHoliday) / nrow(train) 
 
 ```
 
-## Percent of the time school holiday in train
+# Percent of the time school holiday in train
 
 ```{r}
 table(train$SchoolHoliday) / nrow(train) 
 
 ```
 
-## Percent of the time school holiday in test
+# Percent of the time school holiday in test
 
 ```{r}
 table(test$SchoolHoliday) / nrow(test) 
 
 ```
 
-##Histogram of store competition distance
+#Histogram of store competition distance
 
 ```{r}
 hist(store$CompetitionDistance, 100)
 
 ```
 
-## Merge the dataset with same number of variables
+# Merge the dataset with same number of variables
 
 ```{r}
 
@@ -205,7 +205,7 @@ Exploratory Data Analysis (EDA), describe patterns, trends, and relationships fo
 The number of stores, train, test, open, and holiday data is across all data, where promotion, sales, and customer data is only among stores that were open. If a store is closed hasn't got promotion, or sales.
 
 
-## Line diagram shows the average sales by store assortment
+# Line diagram shows the average sales by store assortment
 
 The different store types and assortment types imply different trends:
 
@@ -437,14 +437,14 @@ cols
 
 
 
-## Load data in R
+# Load data in R
 
 ```{r}
 
 trainHex<-as.h2o(train)
 ```
 
-## Train a random forest
+# Train a random forest
 ```{r}
 rfHex <- h2o.randomForest(x=cols,
                           y="LogSales", 
@@ -460,7 +460,7 @@ cat("Predicting Sales\n")
 ```
 
 
-## Load test data
+# Load test data
 
 ```{r}
 testHex<-as.h2o(test)
@@ -468,13 +468,13 @@ testHex<-as.h2o(test)
 ```
 
 
-## Get the results
+# Get the results
 ```{r}
 
 predictions<-as.data.frame(h2o.predict(rfHex,testHex))
 ```
 
-## Return the predictions to the original form
+# Return the predictions to the original form
 
 ```{r}
 
@@ -488,7 +488,7 @@ write.csv(submission, "h2o_rf.csv",row.names=F)
 ```
 
 
-###GBM
+##GBM
 
 ```{r}
 system.time({
@@ -500,14 +500,14 @@ system.time({
 ```
 
 
-## Get the results
+# Get the results
 ```{r}
 md
 
 predictions<-as.data.frame(h2o.predict(rfHex,testHex))
 ```
 
-## Return the predictions to the original form
+# Return the predictions to the original form
 
 ```{r}
 
@@ -518,5 +518,138 @@ head(submission, n = 10)
 
 cat("saving the submission file\n")
 write.csv(submission, "h2o_gbm.csv",row.names=F)
+```
+
+
+##XGBoost
+
+Building up the whole dataset for xgboost
+
+```{r}
+
+rm(list = ls())
+library(readr)
+library(xgboost)
+```
+
+
+
+# Load the data
+
+```{r}
+cat("reading the train and test data\n")
+train <- read_csv("train.csv")
+test  <- read_csv("test.csv")
+store <- read_csv("store.csv")
+
+train <- train[sample(1:nrow(train), 15000, replace=FALSE),]
+test <- test[sample(1:nrow(test), 5000, replace=FALSE),]
+```
+
+##Featuring
+
+# Removing the date column
+
+
+```{r}
+
+train <- merge(train,store)
+test <- merge(test,store)
+
+
+train[is.na(train)]   <- 0
+test[is.na(test)]   <- 0
+
+cat("train data column names and details\n")
+names(train)
+str(train)
+summary(train)
+cat("test data column names and details\n")
+names(test)
+str(test)
+summary(test)
+```
+
+- examine only stores that were open 
+
+- seperating out the elements of the date column for the train set
+- seperating out the elements of the date column for the test set
+
+```{r}
+train <- train[ which(train$Open=='1'),]
+train <- train[ which(train$Sales!='0'),]
+
+train$month <- as.integer(format(train$Date, "%m"))
+train$year <- as.integer(format(train$Date, "%y"))
+train$day <- as.integer(format(train$Date, "%d"))
+train <- train[,-c(3,8)]
+
+test$month <- as.integer(format(test$Date, "%m"))
+test$year <- as.integer(format(test$Date, "%y"))
+test$day <- as.integer(format(test$Date, "%d"))
+test <- test[,-c(4,7)]
+```
+
+#Get the result
+
+```{r}
+
+feature.names <- names(train)[c(1,2,5:19)]
+cat("Feature Names\n")
+feature.names
+
+cat("assuming text variables are categorical & replacing them with numeric ids\n")
+for (f in feature.names) {
+  if (class(train[[f]])=="character") {
+    levels <- unique(c(train[[f]], test[[f]]))
+    train[[f]] <- as.integer(factor(train[[f]], levels=levels))
+    test[[f]]  <- as.integer(factor(test[[f]],  levels=levels))
+  }
+}
+
+cat("train data column names after slight feature engineering\n")
+names(train)
+cat("test data column names after slight feature engineering\n")
+names(test)
+tra<-train[,feature.names]
+RMPSE<- function(preds, dtrain) {
+  labels <- getinfo(dtrain, "label")
+  elab<-exp(as.numeric(labels))-1
+  epreds<-exp(as.numeric(preds))-1
+  err <- sqrt(mean((epreds/elab-1)^2))
+  return(list(metric = "RMPSE", value = err))
+}
+nrow(train)
+h<-sample(nrow(train),10000)
+
+dval<-xgb.DMatrix(data=data.matrix(tra[h,]),label=log(train$Sales+1)[h])
+dtrain<-xgb.DMatrix(data=data.matrix(tra[-h,]),label=log(train$Sales+1)[-h])
+watchlist<-list(val=dval,train=dtrain)
+param <- list(  objective           = "reg:linear", 
+                booster = "gbtree",
+                eta                 = 0.02, # 0.06, #0.01,
+                max_depth           = 10, #changed from default of 8
+                subsample           = 0.9, # 0.7
+                colsample_bytree    = 0.7 # 0.7
+                #num_parallel_tree   = 2
+                # alpha = 0.0001, 
+                # lambda = 1
+)
+
+clf <- xgb.train(   params              = param, 
+                    data                = dtrain, 
+                    nrounds             = 3000, #300, #280, #125, #250, # changed from 300
+                    verbose             = 0,
+                   early_stopping_round    = 100,
+                    watchlist           = watchlist,
+                    maximize            = FALSE,
+                    feval=RMPSE
+)
+pred1 <- exp(predict(clf, data.matrix(test[,feature.names]))) -1
+submission <- data.frame(Id=test$Id, Sales=pred1)
+head(submission, n=10)
+cat("saving the submission file\n")
+write_csv(submission, "rf1.csv")
+
 ```
 
