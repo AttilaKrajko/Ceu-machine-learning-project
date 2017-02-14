@@ -14,7 +14,6 @@ In this project I had to forecast store sales over 100 Rossamnn stores, based on
 
 ```{r}
 
-#Libraries
 
 library(forecast)
 library(data.table)
@@ -37,14 +36,20 @@ library(mfx)
 library(descr)
 library(rstan)
 
-
+```
 # CLEAR MEMORY
+
+```{r}
 rm(list = ls())
+```
+
 
 # SET WORKING DIRECTORY
+```{r}
 setwd("/Users/Attila/Desktop/R tool/Ceu machine learning project")
 getwd()
 ```
+
 
 #First, load train, test, and store data.
 
@@ -117,11 +122,11 @@ train$Day <- as.factor(format(as.Date(train$Date),"%d"))
 train$Year <- as.factor(format(as.Date(train$Date),"%Y"))
 ```
 
-##First look at the data
+#First look at the data
 
 
 
-#Examine the period
+##Examine the period
 
 The dataset is continous. The test period ranges from 2015-08-01 to 2015-09-17, the train period ranges from 2013-01-01 to 2015-07-31.
 
@@ -137,7 +142,7 @@ plot(test$Date, type = "l")
 
 
 
-#Histogram of sales
+##Histogram of sales
 
 ```{r}
 hist(train$Sales, 100)
@@ -146,13 +151,13 @@ summary(train$Sales)
 
 
 
-# Percent of the time promo in train
+##Percent of the time promo in train
 ```{r}
 
 table(train$Promo) / nrow(train)
 ```
 
-# Percent of the time promo in test
+##Percent of the time promo in test
 ```{r}
 
 table(test$Promo) / nrow(train)
@@ -160,34 +165,34 @@ table(test$Promo) / nrow(train)
 ```
 
 
-# Percent of the time holiday in train
+##Percent of the time holiday in train
 ```{r}
 table(train$StateHoliday) / nrow(train) 
 
 ```
 
-# Percent of the time school holiday in train
+##Percent of the time school holiday in train
 
 ```{r}
 table(train$SchoolHoliday) / nrow(train) 
 
 ```
 
-# Percent of the time school holiday in test
+##Percent of the time school holiday in test
 
 ```{r}
 table(test$SchoolHoliday) / nrow(test) 
 
 ```
 
-#Histogram of store competition distance
+##Histogram of store competition distance
 
 ```{r}
 hist(store$CompetitionDistance, 100)
 
 ```
 
-# Merge the dataset with same number of variables
+##Merge the dataset with same number of variables
 
 ```{r}
 
@@ -205,7 +210,7 @@ Exploratory Data Analysis (EDA), describe patterns, trends, and relationships fo
 The number of stores, train, test, open, and holiday data is across all data, where promotion, sales, and customer data is only among stores that were open. If a store is closed hasn't got promotion, or sales.
 
 
-# Line diagram shows the average sales by store assortment
+##Line diagram shows the average sales by store assortment
 
 The different store types and assortment types imply different trends:
 
@@ -220,7 +225,7 @@ ggplot(train,
 ```
 
 
-# The diagram shows the distribution of number of the customers and sales
+##The diagram shows the distribution of number of the customers and sales
 
 The graph shows positive correlation between the number of customers and sales. We can also find some outliers.
   
@@ -230,7 +235,7 @@ The graph shows positive correlation between the number of customers and sales. 
 
 ```
 
-# The line diagram shows the distribution of number of the customers by date
+##The line diagram shows the distribution of number of the customers by date
 
 ```{r}
 
@@ -240,7 +245,7 @@ ggplot(train,
 ```
 
 
-# The plot diagram shows the average sales by store (based on id)
+##The plot diagram shows the average sales by store (based on id)
 We can conlude that most of the average sales around 5000 and there are som outliers over 15000.
 
 ```{r}
@@ -251,7 +256,7 @@ ggplot(data=sales.by.store.df,aes(x=Store,y=Average.Sales)) + geom_point(color="
 
 ```
 
-# The barchart diagram shows the average sales of the weekday
+##The barchart diagram shows the average sales of the weekday
 
 The most popular day of the week is the first one in aspect of the average sales.
 
@@ -264,7 +269,7 @@ ggplot(data=sales.by.day.df,aes(x=DayOfWeek,y=Average.Sales,fill=DayOfWeek)) +
 ```
   
 
-# The two barcharts show the average sales with promo or without promo
+##The two barcharts show the average sales with promo or without promo
 
 Based on the diargram result we can see that promo action has significant effect on average sales.
 
@@ -277,7 +282,7 @@ ggplot(data=sales.by.promo.df,aes(x=Promo,y=Average.Sales,fill=(as.integer(sales
 ```
 
 
-# The distribution shows the average sales of each store
+##The distribution shows the average sales of each store
 
 ```{r}
 sales.by.storeP.df <- aggregate(train$Sales,by = list(train$Store,train$Promo),mean)
@@ -287,7 +292,7 @@ ggplot(data=sales.by.storeP.df,aes(Store,Average.Sales,color=isPromo)) + geom_po
 ```
 
 
-# The barcharts show the average sales on school holiday
+##The barcharts show the average sales on school holiday
 
 Most of the purchase were accomplished on schoolholiday.
 
@@ -299,7 +304,7 @@ ggplot(data=sales.by.schoolH.df,aes(x=SchoolHoliday,y=Average.Sales,fill=SchoolH
   
 ```
 
-# The barcharts show the average sales by store type
+##The barcharts show the average sales by store type
 
 ```{r}
 sales.by.storeType.df <- aggregate(train$Sales,by = list(train$StoreType),function(x){mean(as.numeric(x))})
@@ -309,7 +314,7 @@ ggplot(data=sales.by.storeType.df,aes(x=Store.Type,y=Average.Sales,fill=Store.Ty
   
 ```
 
-# The barcharts show the average sales by assortment type
+##The barcharts show the average sales by assortment type
 
 ```{r}
 sales.by.assortment.df <- aggregate(train$Sales,by = list(train$Assortment),function(x){mean(as.numeric(x))})
@@ -319,7 +324,7 @@ ggplot(data=sales.by.assortment.df,aes(x=Assortment,y=Average.Sales,fill=Assortm
   
 ```
 
-# The distributon shows the average sales by competiton distance
+##The distributon shows the average sales by competiton distance
 
 ```{r}
 sales.by.distance.df <- aggregate(train$Sales,by = list(train$CompetitionDistance),mean)
@@ -329,7 +334,7 @@ ggplot(data=sales.by.distance.df,aes(x=CompDistance,y=Average.Sales)) + geom_poi
   
 ```
 
-# The barcharts show the average sales by month of the year
+##The barcharts show the average sales by month of the year
 
 The most popular month is december in view of the average sales.
 
@@ -341,7 +346,7 @@ ggplot(data=sales.by.month.df,aes(x=Month,y=Average.Sales,fill=Month)) + geom_ba
   
 ```
 
-# The barcharts show the average sales by day of the month
+##The barcharts show the average sales by day of the month
 
 ```{r}
 sales.by.date.df <- aggregate(train$Sales,by = list(train$Day),mean)
@@ -350,7 +355,7 @@ ggplot(data=sales.by.date.df,aes(x=Date,y=Average.Sales,fill=Date)) + geom_bar(s
   ggtitle("Average sales by Date")
 ```
 
-# The barcharts show the average sales by year
+##The barcharts show the average sales by year
 
 The distributon of the sales are almost same at the first sight between the years, however we can see a little increase year by year but it is not significant.
 
@@ -362,7 +367,7 @@ ggplot(data=sales.by.year.df,aes(x=Year,y=Average.Sales,fill=Year)) + geom_bar(s
   
 ```
 
-# The barcharts show the average sales per date by month
+##The barcharts show the average sales per date by month
 
 ```{r}
 sales.by.monthDay.df <- aggregate(train$Sales,by=list(train$Month,train$Day),mean)
@@ -371,7 +376,7 @@ ggplot(data=sales.by.monthDay.df,aes(Month,Average.Sales,fill=Date)) + geom_bar(
   ggtitle("Sales per date by month")
 ```
 
-# The barcharts show the average sales with promo on day of the week
+##The barcharts show the average sales with promo on day of the week
   
 ```{r}
 sales.by.dayP.df <- aggregate(train$Sales,by = list(train$DayOfWeek,train$Promo),mean)
@@ -380,7 +385,7 @@ ggplot(data=sales.by.dayP.df,aes(x=DayOfWeek,y=Average.Sales,fill=isPromo)) +
   geom_bar(stat="identity",position = "dodge") + ggtitle("Average sales by Promo within day of the week")
 ```
 
-### Modeling
+# Modeling
 
 
 
@@ -390,7 +395,7 @@ ggplot(data=sales.by.dayP.df,aes(x=DayOfWeek,y=Average.Sales,fill=isPromo)) +
 
 Use data.table and H2O to create random forest predictions for the entire
 
-#Setup 
+##Setup 
 
 install.packages("h2o")
 
@@ -403,7 +408,7 @@ localH2O = h2o.init()
 
 
 
-# Further transformation
+##Further transformation
 Observations with 0 Sales are removed to get more meaningful modelin result (discarded by Kaggle ).
 Seperating out the elements of the date column for the train set.
 
@@ -437,14 +442,14 @@ cols
 
 
 
-# Load data in R
+##Load data in R
 
 ```{r}
 
 trainHex<-as.h2o(train)
 ```
 
-# Train a random forest
+##Train a random forest
 ```{r}
 rfHex <- h2o.randomForest(x=cols,
                           y="LogSales", 
@@ -460,7 +465,7 @@ cat("Predicting Sales\n")
 ```
 
 
-# Load test data
+##Load test data
 
 ```{r}
 testHex<-as.h2o(test)
@@ -468,13 +473,13 @@ testHex<-as.h2o(test)
 ```
 
 
-# Get the results
+##Get the results
 ```{r}
 
 predictions<-as.data.frame(h2o.predict(rfHex,testHex))
 ```
 
-# Return the predictions to the original form
+##Return the predictions to the original form
 
 ```{r}
 
@@ -488,7 +493,7 @@ write.csv(submission, "h2o_rf.csv",row.names=F)
 ```
 
 
-##GBM
+#GBM
 
 ```{r}
 system.time({
@@ -500,14 +505,14 @@ system.time({
 ```
 
 
-# Get the results
+##Get the results
 ```{r}
 md
 
 predictions<-as.data.frame(h2o.predict(rfHex,testHex))
 ```
 
-# Return the predictions to the original form
+##Return the predictions to the original form
 
 ```{r}
 
@@ -521,7 +526,7 @@ write.csv(submission, "h2o_gbm.csv",row.names=F)
 ```
 
 
-##XGBoost
+#XGBoost
 
 Building up the whole dataset for xgboost
 
@@ -534,7 +539,7 @@ library(xgboost)
 
 
 
-# Load the data
+##Load the data
 
 ```{r}
 cat("reading the train and test data\n")
@@ -546,9 +551,9 @@ train <- train[sample(1:nrow(train), 15000, replace=FALSE),]
 test <- test[sample(1:nrow(test), 5000, replace=FALSE),]
 ```
 
-##Featuring
+#Featuring
 
-# Removing the date column
+##Removing the date column
 
 
 ```{r}
@@ -590,7 +595,7 @@ test$day <- as.integer(format(test$Date, "%d"))
 test <- test[,-c(4,7)]
 ```
 
-#Get the result
+##Get the results
 
 ```{r}
 
