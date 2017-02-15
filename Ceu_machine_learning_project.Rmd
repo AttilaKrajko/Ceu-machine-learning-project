@@ -437,6 +437,8 @@ total$LogSales <- log1p(total$Sales)
 
 train <- subset(total, Date < "2015-08-01")
 test <- subset(total, Date >= "2015-08-01")
+test$StoreType <- as.factor(test$StoreType)
+train$StoreType <- as.factor(train$StoreType)
 
 cat("Building the model...\n")
 cols <- names(train)[c(1,2,7:9,11:22)]
@@ -462,6 +464,8 @@ rfHex <- h2o.randomForest(x=cols,
                           training_frame=trainHex)
 rfHex
 summary(rfHex)
+h2o.mse(rfHex)
+
 cat("Predicting Sales\n")
 
 ```
@@ -471,7 +475,7 @@ cat("Predicting Sales\n")
 
 ```{r}
 testHex<-as.h2o(test)
-
+h2o.mse(h2o.performance(rfHex, testHex))
 ```
 
 
@@ -510,9 +514,12 @@ system.time({
 ##Get the results
 ```{r}
 md
+h2o.mse(md)
 summary(md)
+h2o.mse(h2o.performance(md, testHex))
 
 predictions<-as.data.frame(h2o.predict(rfHex,testHex))
+
 ```
 
 ##Return the predictions to the original form
@@ -627,6 +634,7 @@ RMPSE<- function(preds, dtrain) {
   err <- sqrt(mean((epreds/elab-1)^2))
   return(list(metric = "RMPSE", value = err))
 }
+
 nrow(train)
 h<-sample(nrow(train),10000)
 
