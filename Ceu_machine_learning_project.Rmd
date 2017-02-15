@@ -217,7 +217,6 @@ The number of stores, train, test, open, and holiday data is across all data, wh
 The different store types and assortment types imply different trends:
 
 
-
 ```{r}
 
 
@@ -308,6 +307,7 @@ ggplot(data=sales.by.schoolH.df,aes(x=SchoolHoliday,y=Average.Sales,fill=SchoolH
 
 ##The barcharts show the average sales by store type
 
+Type of Store has an important role in opening patterns of stores, moreover type 'b' stores have comparatively higher sales.
 ```{r}
 sales.by.storeType.df <- aggregate(train$Sales,by = list(train$StoreType),function(x){mean(as.numeric(x))})
 names(sales.by.storeType.df) <- c("Store.Type","Average.Sales")
@@ -327,12 +327,13 @@ ggplot(data=sales.by.assortment.df,aes(x=Assortment,y=Average.Sales,fill=Assortm
 ```
 
 ##The distributon shows the average sales by competiton distance
-
+Competiton distance have -0.030 (negative correlation) with average sales.
 ```{r}
 sales.by.distance.df <- aggregate(train$Sales,by = list(train$CompetitionDistance),mean)
 names(sales.by.distance.df) <- c("CompDistance","Average.Sales")
 ggplot(data=sales.by.distance.df,aes(x=CompDistance,y=Average.Sales)) + geom_point(color="blue") + 
-  ggtitle("Average sales by Competition Distance")
+  ggtitle("Average sales by Competition Distance") + geom_smooth(method = 'lm', color = "red")
+cor(sales.by.distance.df$CompDistance, sales.by.distance.df$Average.Sales)
   
 ```
 
@@ -460,7 +461,7 @@ rfHex <- h2o.randomForest(x=cols,
                           nbins_cats = 1115, ## allow it to fit store ID
                           training_frame=trainHex)
 rfHex
-
+summary(rfHex)
 
 cat("Predicting Sales\n")
 
@@ -510,6 +511,7 @@ system.time({
 ##Get the results
 ```{r}
 md
+summary(md)
 
 predictions<-as.data.frame(h2o.predict(rfHex,testHex))
 ```
@@ -652,8 +654,9 @@ clf <- xgb.train(   params              = param,
                     maximize            = FALSE,
                     feval=RMPSE
 )
-clf
+summary(clf)
 pred1 <- exp(predict(clf, data.matrix(test[,feature.names]))) -1
+summary(pred1)
 submission <- data.frame(Id=test$Id, Sales=pred1)
 head(submission, n=10)
 cat("saving the submission file\n")
