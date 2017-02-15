@@ -10,7 +10,7 @@ In this project I had to forecast store sales over 100 Rossamnn stores, based on
 
 
 # Data source
-
+https://www.kaggle.com/c/rossmann-store-sales/data
 
 ```{r}
 
@@ -462,7 +462,6 @@ rfHex <- h2o.randomForest(x=cols,
                           training_frame=trainHex)
 rfHex
 summary(rfHex)
-
 cat("Predicting Sales\n")
 
 ```
@@ -666,3 +665,4 @@ write_csv(submission, "rf1.csv")
 # Summary
 
 All in all, the best results was provided by xgboost. I only changed rounds (3000) and I transformed to log form the dependent variable (sales) which did not include zero sales for training the model.
+
