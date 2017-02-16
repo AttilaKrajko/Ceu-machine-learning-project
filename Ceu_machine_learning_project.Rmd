@@ -6,7 +6,7 @@ output: html_document
 
 ## Introduction
 
-In this project I had to forecast store sales over 100 Rossamnn stores, based on almost three years of sales history. the company collected sales data for 1,115 Rossmann stores, including holiday, promotion, competitors etc. I select machine learning algorithms to make precise forecast and find those factors which may affect the store sales.
+In this project I had to forecast store sales over 100 Rossamnn stores, based on almost three years of sales history. The company collected sales data for 1,115 Rossmann stores, including holiday, promotion, competitors etc. I selected machine learning algorithms to make precise forecast and find those factors which may affect the store sales.
 
 
 # Data source
@@ -74,7 +74,7 @@ str(store)
 ```
 
 
-The test set has 41088 rows, the train set has 1017209 rows.Store 622 has 11 missing values in the Open columns. This dataset is very big to handle it that is why I reduced it.
+The test set has 41088 rows, the train set has 1017209 rows.Store 622 has 11 missing values in the open columns. This dataset is very big to handle it that is why I reduced it.
 
 I also recognized that the whole customers and sales column is missing from the test data.
 
@@ -396,8 +396,12 @@ ggplot(data=sales.by.dayP.df,aes(x=DayOfWeek,y=Average.Sales,fill=isPromo)) +
 
 ## Random forest
 
-Use data.table and H2O to create random forest predictions for the entire
+Use data.table and H2O to create random forest prediction.
 
+ - The Random forest model is applied on all stores
+ - Sales variable is continuous
+ - Most of the feautures are continous
+ 
 ##Setup 
 
 install.packages("h2o")
@@ -412,7 +416,11 @@ localH2O = h2o.init()
 
 
 ##Further transformation
-Observations with 0 Sales are removed to get more meaningful modelin result (discarded by Kaggle ).
+
+- Date feature is splitted (days, months, years)
+- Train table and Store tables are merged
+
+Observations with 0 Sales are removed to get more meaningful result.
 Seperating out the elements of the date column for the train set.
 
 I choose the log transformation to not be as sensitive to high sales.
@@ -537,7 +545,7 @@ write.csv(submission, "h2o_gbm.csv",row.names=F)
 ```
 
 
-#XGBoost
+#Another approach to a prediction -> XGBoost
 
 Building up the whole dataset for xgboost.
 XGBoos is an optimized distributed gradient boosting method which uses gradient boosting framework.
@@ -645,10 +653,10 @@ dtrain<-xgb.DMatrix(data=data.matrix(tra[-h,]),label=log(train$Sales+1)[-h])
 watchlist<-list(val=dval,train=dtrain)
 param <- list(  objective           = "reg:linear", 
                 booster = "gbtree",
-                eta                 = 0.02, # 0.06, #0.01,
-                max_depth           = 10, #changed from default of 8
-                subsample           = 0.9, # 0.7
-                colsample_bytree    = 0.7 # 0.7
+                eta                 = 0.02, 
+                max_depth           = 10, 
+                subsample           = 0.9,
+                colsample_bytree    = 0.7 
                 #num_parallel_tree   = 2
                 # alpha = 0.0001, 
                 # lambda = 1
@@ -671,6 +679,11 @@ head(submission, n=10)
 cat("saving the submission file\n")
 write_csv(submission, "rf1.csv")
 
+nround.cv = 200
+y = as.matrix(as.integer(train$Sales)-1)
+
+system.time( bst.cv <- xgb.cv(param=param, data=dtrain, label=y, 
+              nfold=4, nrounds=nround.cv, prediction=TRUE, verbose=FALSE) )
 ```
 # Summary
 
