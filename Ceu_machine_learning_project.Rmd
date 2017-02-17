@@ -474,7 +474,7 @@ rfHex
 h2o.performance(rfHex)
 summary(rfHex)
 h2o.mse(rfHex)
-
+print(rfHex)
 cat("Predicting Sales\n")
 
 ```
@@ -493,6 +493,8 @@ h2o.mse(h2o.performance(rfHex, testHex))
 ```{r}
 
 predictions<-as.data.frame(h2o.predict(rfHex,testHex))
+RMSE <- sqrt(sum((predictions - test$Sales)^2)/length(predictions))
+print(RMSE)
 ```
 
 ##Return the predictions to the original form
@@ -503,6 +505,8 @@ pred <- expm1(predictions[,1])
 summary(pred)
 submission <- data.frame(Id=test$Id, Sales=pred)
 head(submission, n = 10)
+
+
 
 cat("saving the submission file\n")
 write.csv(submission, "h2o_rf.csv",row.names=F)
@@ -524,10 +528,14 @@ system.time({
 ##Get the results
 ```{r}
 md
+print(md)
 h2o.mse(md)
 summary(md)
 h2o.mse(h2o.performance(md, testHex))
-predictions<-as.data.frame(h2o.predict(rfHex,testHex))
+predictions2<-as.data.frame(h2o.predict(rfHex,testHex))
+
+RMSE <- sqrt(sum((predictions2 - test$Sales)^2)/length(predictions))
+print(RMSE)
 
 ```
 
@@ -672,6 +680,7 @@ clf <- xgb.train(   params              = param,
                     feval=RMPSE
 )
 summary(clf)
+print(clf)
 pred1 <- exp(predict(clf, data.matrix(test[,feature.names]))) -1
 summary(pred1)
 submission <- data.frame(Id=test$Id, Sales=pred1)
@@ -679,13 +688,10 @@ head(submission, n=10)
 cat("saving the submission file\n")
 write_csv(submission, "rf1.csv")
 
-nround.cv = 200
-y = as.matrix(as.integer(train$Sales)-1)
+bst <- xgboost(data = dtrain, label=log(train$Sales+1),nrounds = 39, param, metric = "MSE")
 
-system.time( bst.cv <- xgb.cv(param=param, data=dtrain, label=y, 
-              nfold=4, nrounds=nround.cv, prediction=TRUE, verbose=FALSE) )
 ```
-# Summary
+## Summary
 
-All in all, the best results was provided by xgboost. I only changed rounds (3000) and I transformed to log form the dependent variable (sales) which did not include zero sales for training the model.
+#All in all, the best results was provided by xgboost. I only changed rounds (3000) and I transformed to log form the dependent variable (sales) which did not include zero sales for training the model.
 
