@@ -672,5 +672,5 @@ bst <- xgboost(data = dtrain, label=log(train$Sales+1),nrounds = 39, param, metr
 ```
 ## Summary
 
-#All in all, the best results was provided by xgboost. I only changed rounds (3000) and I transformed to log form the dependent variable (sales) which did not include zero sales for training the model.
+###All in all, the best results was provided by xgboost. I only changed rounds (3000) and I transformed to log form the dependent variable (sales) which did not include zero sales for training the model.
 
