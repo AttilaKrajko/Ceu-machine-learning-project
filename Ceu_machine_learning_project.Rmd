@@ -674,16 +674,16 @@ head(submission, n=10)
 cat("saving the submission file\n")
 write_csv(submission, "rf1.csv")
 
+bst2 <- xgb.train(data=dval, max.depth=2, eta=1, nthread = 2, nround=2, watchlist=watchlist, objective = "reg:linear")
+
 bst <- xgboost(data = dtrain, label=log(train$Sales+1),nrounds = 39, param, metric = "RMSE")
-bst <- xgboost(data = dval, label=log(train$Sales+1),nrounds = 39, param, metric = "RMSE")
 
-bst2 <- xgb.train(data=dtrain, max.depth=2, eta=1, nthread = 2, nround=2, watchlist=watchlist, objective = "reg:linear")
+
+
 ```
+
+
 ## Summary
-
-```{r}
-
-```
 
 All in all, the best results was provided by xgboost (based on rmse values). I only changed rounds (3000) and I transformed to log form the dependent variable (sales) which did not include zero sales for training the model.
 
