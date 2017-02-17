@@ -167,20 +167,6 @@ table(test$Promo) / nrow(train)
 ```
 
 
-##Percent of the time holiday in train
-```{r}
-table(train$StateHoliday) / nrow(train) 
-
-```
-
-
-##Percent of the time school holiday in test
-
-```{r}
-table(test$SchoolHoliday) / nrow(test) 
-
-```
-
 ##Histogram of store competition distance
 
 ```{r}
