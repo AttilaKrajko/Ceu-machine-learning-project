@@ -173,12 +173,6 @@ table(train$StateHoliday) / nrow(train)
 
 ```
 
-##Percent of the time school holiday in train
-
-```{r}
-table(train$SchoolHoliday) / nrow(train) 
-
-```
 
 ##Percent of the time school holiday in test
 
@@ -505,7 +499,6 @@ pred <- expm1(predictions[,1])
 summary(pred)
 submission <- data.frame(Id=test$Id, Sales=pred)
 head(submission, n = 10)
-
 
 
 cat("saving the submission file\n")
