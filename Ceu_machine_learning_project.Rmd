@@ -678,7 +678,9 @@ bst2 <- xgb.train(data=dval, max.depth=2, eta=1, nthread = 2, nround=2, watchlis
 
 bst <- xgboost(data = dtrain, label=log(train$Sales+1),nrounds = 39, param, metric = "RMSE")
 
-
+cv <- xgb.cv(data = dtrain, nrounds = 3, nthread = 2, nfold = 5, metrics = list("rmse"),
+                  max_depth = 3, eta = 1)
+print(cv)
 
 ```
 
