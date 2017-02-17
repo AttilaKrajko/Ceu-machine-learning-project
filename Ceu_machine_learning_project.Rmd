@@ -454,6 +454,7 @@ rfHex
 h2o.performance(rfHex)
 summary(rfHex)
 h2o.mse(rfHex)
+h2o.rmse(rfHex)
 print(rfHex)
 cat("Predicting Sales\n")
 
@@ -465,6 +466,8 @@ cat("Predicting Sales\n")
 ```{r}
 testHex<-as.h2o(test)
 h2o.mse(h2o.performance(rfHex, testHex))
+h2o.rmse(h2o.performance(rfHex, testHex))
+
 
 ```
 
@@ -509,8 +512,10 @@ system.time({
 md
 print(md)
 h2o.mse(md)
+h2o.rmse(md)
 summary(md)
 h2o.mse(h2o.performance(md, testHex))
+h2o.rmse(h2o.performance(md, testHex))
 predictions2<-as.data.frame(h2o.predict(rfHex,testHex))
 
 RMSE <- sqrt(sum((predictions2 - test$Sales)^2)/length(predictions))
@@ -655,11 +660,13 @@ clf <- xgb.train(   params              = param,
                     verbose             = 0,
                    early_stopping_round    = 100,
                     watchlist           = watchlist,
+                   metrics = list("rmse","auc"),
                     maximize            = FALSE,
                     feval=RMPSE
 )
+
 summary(clf)
-print(clf)
+print(clf, verbose=TRUE)
 pred1 <- exp(predict(clf, data.matrix(test[,feature.names]))) -1
 summary(pred1)
 submission <- data.frame(Id=test$Id, Sales=pred1)
@@ -667,10 +674,16 @@ head(submission, n=10)
 cat("saving the submission file\n")
 write_csv(submission, "rf1.csv")
 
-bst <- xgboost(data = dtrain, label=log(train$Sales+1),nrounds = 39, param, metric = "MSE")
+bst <- xgboost(data = dtrain, label=log(train$Sales+1),nrounds = 39, param, metric = "RMSE")
+bst <- xgboost(data = dval, label=log(train$Sales+1),nrounds = 39, param, metric = "RMSE")
 
+bst2 <- xgb.train(data=dtrain, max.depth=2, eta=1, nthread = 2, nround=2, watchlist=watchlist, objective = "reg:linear")
 ```
 ## Summary
 
-###All in all, the best results was provided by xgboost. I only changed rounds (3000) and I transformed to log form the dependent variable (sales) which did not include zero sales for training the model.
+```{r}
+
+```
+
+All in all, the best results was provided by xgboost (based on rmse values). I only changed rounds (3000) and I transformed to log form the dependent variable (sales) which did not include zero sales for training the model.
 
